@@ -143,6 +143,21 @@ context "Resque" do
     payload = Resque.pop(:people)
     assert payload.uuid
   end
+  
+  test "can set the status of a job from the job instance" do
+    id = Resque::Job.create(:jobs, PerformWithJob, 'resque bot')
+    job = Resque::Job.reserve(:jobs)
+    assert_equal PerformWithJob, job.payload_class
+    assert job.status = "I'm working!"
+    assert_equal "I'm working!", Resque.get_status(id)
+  end
+  
+  test "can get the status of a job from the job instance" do
+    id = Resque::Job.create(:jobs, PerformWithJob, 'resque bot')
+    job = Resque::Job.reserve(:jobs)
+    assert Resque.set_status(id, "I'm also working!")
+    assert_equal "I'm also working!", job.status
+  end
 
   test "knows how big a queue is" do
     assert_equal 3, Resque.size(:people)
