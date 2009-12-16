@@ -13,6 +13,7 @@ require 'resque/failure'
 require 'resque/failure/base'
 
 require 'resque/helpers'
+require 'resque/payload'
 require 'resque/stat'
 require 'resque/job'
 require 'resque/worker'
@@ -86,9 +87,10 @@ module Resque
     redis.llen("queue:#{queue}").to_i
   end
   
-  # get an item in a queue by uuid
+  # get an item in a queue by uuid, returns a Resque::Payload or nil
   def get(uuid)
-    decode redis.get("jobs:#{uuid}")
+    val = redis.get("jobs:#{uuid}")
+    val ? Resque::Payload.new(uuid, decode(val)) : nil
   end
   
   def del(uuid)
