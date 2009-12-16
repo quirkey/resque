@@ -1,4 +1,5 @@
 require 'redis/namespace'
+require 'uuid'
 
 begin
   require 'yajl'
@@ -46,6 +47,10 @@ module Resque
     "Resque Client connected to #{redis.server}"
   end
 
+  # shortcut to uuid generation
+  def generate_uuid
+    UUID.generate(:compact)
+  end
 
   #
   # queue manipulation
@@ -55,20 +60,44 @@ module Resque
   # item should be any JSON-able Ruby object.
   def push(queue, item)
     watch_queue(queue)
-    redis.rpush "queue:#{queue}", encode(item)
+    uuid = generate_uuid
+    set(uuid, item)
+    redis.rpush "queue:#{queue}", uuid
+    uuid
   end
 
   # Pops a job off a queue. Queue name should be a string.
   #
   # Returns a Ruby object.
   def pop(queue)
-    decode redis.lpop("queue:#{queue}")
+    uuid = redis.lpop("queue:#{queue}")
+    if uuid 
+      val = get(uuid)
+      del(uuid)
+      val
+    else 
+      nil
+    end
   end
 
   # Returns an int representing the size of a queue.
   # Queue name should be a string.
   def size(queue)
     redis.llen("queue:#{queue}").to_i
+  end
+  
+  # get an item in a queue by uuid
+  def get(uuid)
+    decode redis.get("jobs:#{uuid}")
+  end
+  
+  def del(uuid)
+    redis.delete("jobs:#{uuid}")
+  end
+  
+  # update an item in a queue by uuid
+  def set(uuid, item)
+    redis.set "jobs:#{uuid}", encode(item)
   end
 
   # Returns an array of items currently queued. Queue name should be
@@ -80,19 +109,22 @@ module Resque
   # To get the 3rd page of a 30 item, paginatied list one would use:
   #   Resque.peek('my_list', 59, 30)
   def peek(queue, start = 0, count = 1)
-    list_range("queue:#{queue}", start, count)
+    list_range("queue:#{queue}", start, count) do |item|
+      get item
+    end
   end
 
   # Does the dirty work of fetching a range of items from a Redis list
   # and converting them into Ruby objects.
-  def list_range(key, start = 0, count = 1)
+  def list_range(key, start = 0, count = 1, &block)
     if count == 1
-      decode redis.lindex(key, start)
+      val = redis.lindex(key, start)
+      val = yield(val) if block_given?
     else
-      Array(redis.lrange(key, start, start+count-1)).map do |item|
-        decode item
-      end
+      val = Array(redis.lrange(key, start, start+count-1))
+      val = val.map(&block) if block_given?
     end
+    val
   end
 
   # Returns an array of all known Resque queues as strings.
@@ -181,8 +213,11 @@ module Resque
   # Returns an array of all known Resque keys in Redis. Redis' KEYS operation
   # is O(N) for the keyspace, so be careful - this can be slow for big databases.
   def keys
-    redis.keys("*").map do |key|
-      key.sub('resque:', '')
+    keys = []
+    redis.keys("*").each do |key|
+      key = key.sub('resque:', '')
+      keys << key if key !~ /^jobs/
     end
+    keys
   end
 end
