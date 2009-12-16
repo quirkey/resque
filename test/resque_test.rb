@@ -101,6 +101,10 @@ context "Resque" do
     assert_match(/\w{32}/, id)
   end
   
+  test "putting an item on the queue should insert the uuid into the payload" do
+    id = Resque.push(:people, { 'name' => 'jon' })
+  end
+  
   test "can look up a specific job by uuid" do
     id = Resque.push(:people, { 'name' => 'jon' })
     assert_equal({ 'name' => 'jon' }, Resque.get(id))
@@ -117,6 +121,27 @@ context "Resque" do
     assert_equal({ 'name' => 'bob' }, Resque.pop(:people))
     assert_equal({ 'name' => 'mark' }, Resque.pop(:people))
     assert_equal nil, Resque.pop(:people)
+  end
+  
+  test "payload from pop should be an instance of Resque::Payload" do
+    payload = Resque.pop(:people)
+    assert payload.is_a?(Hash)
+    assert payload.is_a?(Resque::Payload)
+  end
+  
+  test "can set the uuid of a payload when initializing" do
+    payload = Resque::Payload.new('12345', { 'name' => 'chris' })
+    assert_equal 'chris', payload['name']
+    assert '12345', payload.uuid
+    
+    payload = Resque::Payload.new({ 'name' => 'chris' })
+    assert_equal 'chris', payload['name']
+    assert_equal nil, payload.uuid
+  end
+  
+  test "can get the uuid from the payload object" do
+    payload = Resque.pop(:people)
+    assert payload.uuid
   end
 
   test "knows how big a queue is" do

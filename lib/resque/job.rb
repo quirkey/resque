@@ -12,8 +12,6 @@ module Resque
   #   klass = Resque::Job.constantize(job.payload['class'])
   #   klass.perform(*job.payload['args'])
   class Job
-    include Helpers
-    extend Helpers
 
     # The worker object which is currently processing this job.
     attr_accessor :worker
@@ -63,12 +61,12 @@ module Resque
 
     # Returns the actual class constant represented in this job's payload.
     def payload_class
-      @payload_class ||= constantize(@payload['class'])
+      payload.klass
     end
 
     # Returns an array of args represented in this job's payload.
     def args
-      @payload['args']
+      payload.args
     end
 
     # Given an exception object, hands off the needed parameters to
