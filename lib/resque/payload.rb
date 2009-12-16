@@ -9,7 +9,7 @@ module Resque
       if uuid.is_a?(String)
         self.uuid = uuid
       else
-        self.uuid = nil
+        self.uuid = generate_uuid
         hash = uuid
       end
       self.replace(hash)
