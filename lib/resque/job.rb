@@ -25,7 +25,7 @@ module Resque
 
     def initialize(queue, payload)
       @queue = queue
-      @payload = Resque::Payload.new(payload)
+      @payload = payload.is_a?(Resque::Payload) ? payload : Resque::Payload.new(payload)
     end
 
     # Creates a job by placing it on a queue. Expects a string queue
@@ -71,6 +71,18 @@ module Resque
     # Returns an array of args represented in this job's payload.
     def args
       payload.args
+    end
+    
+    # Sets the string status of the current job.
+    # aliased to <<
+    def status=(message)
+      Resque.set_status(payload.uuid, message)
+    end
+    alias :<< :status=
+    
+    # get the staus of the current job.
+    def status
+      Resque.get_status(payload.uuid)
     end
 
     # Given an exception object, hands off the needed parameters to
