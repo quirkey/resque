@@ -136,7 +136,7 @@ context "Resque" do
     
     payload = Resque::Payload.new({ 'name' => 'chris' })
     assert_equal 'chris', payload['name']
-    assert_equal nil, payload.uuid
+    assert_match /\w{32}/, payload.uuid
   end
   
   test "can get the uuid from the payload object" do
@@ -198,6 +198,24 @@ context "Resque" do
     assert_raises Resque::NoClassError do
       Resque::Job.create(:jobs, nil)
     end
+  end
+  
+  test "can perform jobs without args" do
+    job = Resque::Job.new(:jobs, {'class' => 'JobWithoutArgs'})
+    assert job
+    assert job.perform
+  end
+  
+  test "can perform jobs with args" do
+    job = Resque::Job.new(:jobs, {'class' => 'GoodJob', 'args' => ['resque bot']})
+    assert job
+    assert_match(/resque bot/, job.perform)
+  end
+  
+  test "can perform jobs on classes with perform_with_job" do
+    job = Resque::Job.new(:jobs, {'class' => 'PerformWithJob', 'args' => ['resque bot']})
+    assert job
+    assert_match(/This is job (\w{32})/, job.perform)
   end
 
   test "keeps stats" do

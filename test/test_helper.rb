@@ -89,8 +89,22 @@ class BadJob
   end
 end
 
+class JobWithoutArgs
+  def self.perform
+    "Good job!"
+  end
+end
+
 class GoodJob
   def self.perform(name)
     "Good job, #{name}"
+  end
+end
+
+class PerformWithJob
+  @queue = :perform_with_job
+  
+  def self.perform_with_job(job, name)
+    "This is job #{job.payload.uuid} named #{name}"
   end
 end

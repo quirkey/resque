@@ -100,6 +100,17 @@ context "Resque::Worker" do
     assert_equal 1, Resque::Failure.count
   end
 
+  test "injects job as first argument if perform_with_job is avaliable" do
+    job    = Resque.enqueue(PerformWithJob, "resque bot")
+    worker = Resque::Worker.new(:perform_with_job)
+    assert_equal 0, Resque::Failure.count
+    assert_equal 0, worker.processed
+    job = worker.reserve
+    worker.process job
+    assert_equal 0, Resque::Failure.count, "Expected no failures but #{Resque::Failure.all.inspect}"
+    assert_equal 1, worker.processed
+  end
+
   test "inserts itself into the 'workers' list on startup" do
     @worker.work(0) do
       assert_equal @worker, Resque.workers[0]

@@ -25,7 +25,7 @@ module Resque
 
     def initialize(queue, payload)
       @queue = queue
-      @payload = payload
+      @payload = Resque::Payload.new(payload)
     end
 
     # Creates a job by placing it on a queue. Expects a string queue
@@ -56,7 +56,11 @@ module Resque
     # Calls #perform on the class given in the payload with the
     # arguments given in the payload.
     def perform
-      args ? payload_class.perform(*args) : payload_class.perform
+      if payload_class.respond_to?(:perform_with_job)
+        payload_class.perform_with_job(*(Array(args).unshift(self)))
+      else
+        args ? payload_class.perform(*args) : payload_class.perform
+      end
     end
 
     # Returns the actual class constant represented in this job's payload.
