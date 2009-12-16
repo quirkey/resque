@@ -5,6 +5,11 @@ module Resque
     def redis
       Resque.redis
     end
+    
+    # shortcut to uuid generation
+    def generate_uuid
+      UUID.generate(:compact)
+    end
 
     # Given a Ruby object, returns a string suitable for storage in a
     # queue.

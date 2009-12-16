@@ -48,11 +48,6 @@ module Resque
     "Resque Client connected to #{redis.server}"
   end
 
-  # shortcut to uuid generation
-  def generate_uuid
-    UUID.generate(:compact)
-  end
-
   #
   # queue manipulation
   #
