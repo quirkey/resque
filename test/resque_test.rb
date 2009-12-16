@@ -95,6 +95,22 @@ context "Resque" do
   test "can put items on a queue" do
     assert Resque.push(:people, { 'name' => 'jon' })
   end
+  
+  test "putting on a queue should return a uuid" do
+    id = Resque.push(:people, { 'name' => 'jon' })
+    assert_match(/\w{32}/, id)
+  end
+  
+  test "can look up a specific job by uuid" do
+    id = Resque.push(:people, { 'name' => 'jon' })
+    assert_equal({ 'name' => 'jon' }, Resque.get(id))
+  end
+  
+  test "can set and get status for a specific job by uuid" do
+    id = Resque.push(:people, { 'name' => 'jon' })
+    assert Resque.set_status(:people, id, 'this job is working')
+    assert_equal 'this job is working', Resque.get_status(:people, id, 'this job is working')
+  end
 
   test "can pull items off a queue" do
     assert_equal({ 'name' => 'chris' }, Resque.pop(:people))
@@ -152,7 +168,7 @@ context "Resque" do
   test "keeps track of resque keys" do
     assert_equal ["queue:people", "queues"], Resque.keys
   end
-
+  
   test "badly wants a class name, too" do
     assert_raises Resque::NoClassError do
       Resque::Job.create(:jobs, nil)
