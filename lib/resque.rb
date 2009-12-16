@@ -144,6 +144,24 @@ module Resque
     redis.sadd(:queues, queue.to_s)
   end
 
+  #
+  # job status
+  #
+  
+  # These methods allow you to get/set a job status per id. This can be extremely useful
+  # for very long running tasks
+  
+  # set the status for a job by uuid
+  # status is a string
+  def set_status(uuid, status)
+    redis.set "job-status:#{uuid}", status
+  end
+  
+  # get the status for a job by uuid
+  # status is a string
+  def get_status(uuid)
+    redis.get "job-status:#{uuid}"
+  end
 
   #
   # job shortcuts
