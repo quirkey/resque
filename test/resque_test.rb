@@ -108,8 +108,8 @@ context "Resque" do
   
   test "can set and get status for a specific job by uuid" do
     id = Resque.push(:people, { 'name' => 'jon' })
-    assert Resque.set_status(:people, id, 'this job is working')
-    assert_equal 'this job is working', Resque.get_status(:people, id, 'this job is working')
+    assert Resque.set_status(id, 'this job is working')
+    assert_equal 'this job is working', Resque.get_status(id)
   end
 
   test "can pull items off a queue" do
